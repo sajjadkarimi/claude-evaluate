@@ -10,6 +10,7 @@ transcript, measures where tokens went, and writes a short review. It looks at:
 - repeated file reads
 - large tool results
 - vague or corrected prompts
+- simple tasks you could run yourself (git commands, test runs, one-line edits) and an upper-bound token saving
 - plugins that might help, such as caveman or code-review-graph (suggested only when the session data supports it)
 
 The review contains before-and-after rewrites of your own prompts, a few habits to

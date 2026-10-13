@@ -80,7 +80,7 @@ Rules:
 
 ## Step 4: Write the review
 
-Keep it under about 500 words, in this shape:
+Keep it under about 550 words, in this shape:
 
 1. **Snapshot** (2-3 lines): prompts, turns, total tokens in/out, cache hit ratio,
    peak context. Say the figures are token counts, not a bill.
@@ -90,8 +90,10 @@ Keep it under about 500 words, in this shape:
    shortened if long) and a better version, with one line on why it helps.
 4. **Habits to change**: 2-4 concrete, ranked by likely savings.
 5. **Estimated savings** (see rules below).
-6. **Tools that might help** (see Step 3b): omit this section if nothing applies.
-7. **What went well**: one genuine positive, if the data shows one.
+6. **If you did the simple parts yourself** (see rules below): omit if the script
+   found no calls.
+7. **Tools that might help** (see Step 3b): omit this section if nothing applies.
+8. **What went well**: one genuine positive, if the data shows one.
 
 ### Estimated savings rules
 
@@ -107,6 +109,21 @@ own numbers.
 - Always say these are what-if estimates from the transcript, that the items overlap,
   and that percentages are of weighted token cost (output counts about 5x input, cached
   reads about 0.1x), not a dollar amount or a share of any usage limit.
+
+### "If you did the simple parts yourself" rules
+
+The reader is a developer who can run git commands, run tests and make small edits
+without Claude. Use the `estimated_savings.do_it_yourself` block, and only that.
+
+- List each category in `by_category` with its call count, `pct_of_session`, and one
+  or two of its `examples`. Show `total_pct_of_session` as an "up to" figure.
+- Say it is an upper bound: part of it returns if the developer has to paste output
+  (for example a failing test) back to Claude.
+- Say it overlaps the other estimates and must not be added to them.
+- Keep it practical, not preachy: Claude is still good for things like writing commit
+  messages from a diff or fixing failing tests. The advice is about not paying for
+  routine commands, such as `git status`, `git add`, a plain test run to see pass or
+  fail, or a one-line edit.
 
 Rules:
 - Be specific to this session; no generic advice lists.

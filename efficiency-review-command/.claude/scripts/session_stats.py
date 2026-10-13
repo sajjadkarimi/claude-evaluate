@@ -95,6 +95,26 @@ def list_sessions(limit):
         print(f"{i:>2}  {ts:%Y-%m-%d %H:%M}  {os.path.getsize(p) // 1024:>6} KB  {first_prompt(p)}")
 
 
+GIT_RE = re.compile(r"(^|[;&|]\s*)git\s+(status|diff|log|show|add|commit|push|pull|fetch|"
+                    r"checkout|switch|branch|stash|merge|rebase|restore|reset)\b")
+TEST_RE = re.compile(r"(^|[;&|]\s*)(pytest|python3? -m (pytest|unittest)|npm (run )?test|"
+                     r"yarn test|pnpm test|go test|cargo test|mvn\S* .*\btest|gradlew? .*\btest|"
+                     r"dotnet test|jest|vitest|make test|rspec|phpunit)\b")
+SMALL_EDIT_CHARS = 200
+
+
+def diy_category(c):
+    """Which simple developer task a tool call was, or None."""
+    if c["name"] == "Bash":
+        if GIT_RE.search(c["cmd"]):
+            return "git_commands"
+        if TEST_RE.search(c["cmd"]):
+            return "running_tests"
+    elif c["name"] in ("Edit", "Write", "MultiEdit") and c["size"] <= SMALL_EDIT_CHARS:
+        return "small_edits"
+    return None
+
+
 def wcost(u):
     return (u.get("output_tokens", 0) * W_OUT + u.get("input_tokens", 0)
             + u.get("cache_creation_input_tokens", 0) * W_WRITE
@@ -106,6 +126,9 @@ def analyse(path):
     tool_uses = {}                     # tool_use_id -> (name, target)
     events = []                        # ("prompt", text) / ("assistant", id)
     results = []                       # (tool, target, est_tokens, turn_index)
+    calls = {}                         # tool_use_id -> {name, cmd, size}
+    turn_calls = {}                    # message id -> set of tool_use ids
+    res_tok = {}                       # tool_use_id -> (est_tokens, turn_index)
     side_tokens = 0
 
     with open(path) as f:
@@ -136,15 +159,19 @@ def analyse(path):
                         target = (inp.get("file_path") or inp.get("command")
                                   or inp.get("pattern") or inp.get("path") or "")
                         tool_uses[b["id"]] = (b.get("name"), str(target)[:120])
+                        calls[b["id"]] = {
+                            "name": b.get("name"), "cmd": str(inp.get("command") or "")[:400],
+                            "size": len(str(inp.get("new_string") or inp.get("content") or ""))}
+                        turn_calls.setdefault(mid, set()).add(b["id"])
             elif kind == "user" and not e.get("isSidechain"):
                 content = msg.get("content")
                 if isinstance(content, list):
                     for b in content:
                         if isinstance(b, dict) and b.get("type") == "tool_result":
                             name, target = tool_uses.get(b.get("tool_use_id"), ("?", ""))
-                            results.append((name, target,
-                                            result_chars(b.get("content", "")) // 4,
-                                            len(asst)))
+                            k = result_chars(b.get("content", "")) // 4
+                            results.append((name, target, k, len(asst)))
+                            res_tok[b.get("tool_use_id")] = (k, len(asst))
                 p = real_prompt(e)
                 if p:
                     events.append(("prompt", p))
@@ -221,6 +248,35 @@ def analyse(path):
                           f"~{COMPACT_COST // 1000}k units for the summary. Assumes nothing "
                           "important was lost in compaction."})
 
+    # ---- "do it yourself" what-if: simple tasks a developer could run directly ----
+    diy = {}
+    for mid, ids in turn_calls.items():
+        cats = {i: diy_category(calls[i]) for i in ids}
+        if not all(cats.values()):
+            continue   # turn also did other work, so it would still have happened
+        turn_cost = wcost(asst[mid]["usage"]) / len(ids)
+        for i, cat in cats.items():
+            k, ti = res_tok.get(i, (0, total_turns))
+            d = diy.setdefault(cat, {"calls": 0, "units": 0.0, "examples": []})
+            d["calls"] += 1
+            d["units"] += turn_cost + k * (W_WRITE + W_READ * max(total_turns - ti, 0))
+            if len(d["examples"]) < 3:
+                d["examples"].append((calls[i]["cmd"] or calls[i]["name"])[:80])
+    diy_total = min(sum(d["units"] for d in diy.values()), session_cost)
+    for d in diy.values():
+        d["units"] = round(min(d["units"], session_cost))
+        d["pct_of_session"] = round(100 * d["units"] / session_cost, 1) if session_cost else 0
+    diy_block = {
+        "by_category": diy,
+        "total_units": round(diy_total),
+        "total_pct_of_session": round(100 * diy_total / session_cost, 1) if session_cost else 0,
+        "note": "UPPER BOUND. Counts only turns where every tool call was a simple developer "
+                "task: the turn's own cost plus carrying its output in context. If the "
+                "developer must paste results back (e.g. a failing test) or the next step "
+                "needs the output, part of this comes back. Overlaps the other items, so "
+                "never add it to combined_pct_range.",
+    }
+
     for it in items:
         it["est_units"] = round(min(it["est_units"], session_cost))   # cannot exceed total
         it["pct_of_session"] = round(100 * it["est_units"] / session_cost, 1) if session_cost else 0
@@ -263,6 +319,7 @@ def analyse(path):
             "items": savings,
             "combined_pct_range": [low, round(high, 1)],
             "at_stake_not_savings": at_stake,
+            "do_it_yourself": diy_block,
             "note": "Items overlap, so do not add them: the real figure likely lies between "
                     "the largest single item and the capped sum. 'at_stake' items are what a "
                     "failed attempt cost, not what a better prompt would have saved, and are "
