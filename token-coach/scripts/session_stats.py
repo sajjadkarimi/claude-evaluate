@@ -117,12 +117,26 @@ TEST_RE = re.compile(r"(^|[;&|]\s*)(pytest|python3? -m (pytest|unittest)|npm (ru
 SMALL_EDIT_CHARS = 200
 
 
+def command_segments(cmd):
+    """Split a shell command into its chained commands. Heredoc bodies are dropped,
+    and a pipeline counts as its first command (so `git log | head` is just git)."""
+    cmd = cmd.split("<<", 1)[0]
+    segs = []
+    for part in re.split(r"&&|\|\||;|\n", cmd):
+        part = part.split("|", 1)[0].strip()
+        if part and not part.startswith("cd "):
+            segs.append(part)
+    return segs
+
+
 def diy_category(c):
-    """Which simple developer task a tool call was, or None."""
+    """Which simple developer task a tool call was, or None. A chained command only
+    counts when every command in it is the same kind of simple task."""
     if c["name"] == "Bash":
-        if GIT_RE.search(c["cmd"]):
+        segs = command_segments(c["cmd"])
+        if segs and all(GIT_RE.search(x) for x in segs):
             return "git_commands"
-        if TEST_RE.search(c["cmd"]):
+        if segs and all(TEST_RE.search(x) for x in segs):
             return "running_tests"
     elif c["name"] in ("Edit", "Write", "MultiEdit") and c["size"] <= SMALL_EDIT_CHARS:
         return "small_edits"
@@ -243,6 +257,12 @@ def analyse(path):
         p["n"] = i
     top = sorted(prompts, key=lambda p: -p["cost"])[:5]
 
+    by_tool = collections.defaultdict(lambda: [0, 0])
+    for n, _, k, _ in results:
+        key = "mcp:" + n.split("__")[1] if (n or "").startswith("mcp__") and n.count("__") >= 2 else n
+        by_tool[key][0] += 1
+        by_tool[key][1] += k
+
     reads = collections.Counter(t for n, t, _, _ in results if n == "Read" and t)
     words = sorted(len(p["text"].split()) for p in prompts)
     corrections = [p for p in prompts if is_correction(p["text"])]
@@ -337,6 +357,9 @@ def analyse(path):
         "largest_tool_results": [
             {"tool": n, "target": t, "est_tokens": k}
             for n, t, k, _ in sorted(results, key=lambda r: -r[2])[:5]],
+        "tool_result_totals": [
+            {"tool": t, "calls": v[0], "est_tokens": v[1]}
+            for t, v in sorted(by_tool.items(), key=lambda kv: -kv[1][1])[:8]],
         "files_read_3plus_times": {k: v for k, v in reads.items() if v >= 3},
         "prompt_stats": {
             "median_words": words[len(words) // 2] if words else 0,

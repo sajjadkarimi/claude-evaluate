@@ -43,6 +43,20 @@ class SessionStatsTest(unittest.TestCase):
         self.assertIsNone(run("mvn test-compile"))
         self.assertEqual(run("git status"), "git_commands")
 
+    def test_chained_commands_must_all_be_simple(self):
+        run = lambda cmd: ss.diy_category({"name": "Bash", "cmd": cmd, "size": 0})
+        self.assertEqual(run("git log --oneline | head -5"), "git_commands")
+        self.assertEqual(run("cd repo && git add -A && git commit -F - <<'EOF'\nmsg\nEOF"),
+                         "git_commands")
+        self.assertIsNone(run("git status && mvn package"))
+        self.assertIsNone(run("for f in *; do git add $f; done"))
+
+    def test_tool_result_totals_group_by_tool(self):
+        totals = {t["tool"]: t for t in self.out["tool_result_totals"]}
+        self.assertEqual(totals["Bash"]["calls"], 1)
+        self.assertEqual(totals["mcp:jira"]["calls"], 2)
+        self.assertEqual(totals["mcp:jira"]["est_tokens"], 200)
+
     def test_output_is_json_serialisable_with_range_text(self):
         json.dumps(self.out)
         self.assertIn("combined_pct_text", self.out["estimated_savings"])
