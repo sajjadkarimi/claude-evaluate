@@ -1,6 +1,6 @@
 ---
 name: efficiency-coach
-description: Reviews the user's finished Claude Code session and explains how they could have used fewer tokens - better prompt wording, session hygiene, model choice. Use only when the user asks for an efficiency review (e.g. /evaluate).
+description: Reviews the user's finished Claude Code session and explains how they could have used fewer tokens - better prompt wording, session hygiene, model choice. Use only when the user asks for an efficiency review (e.g. /efficiency-review).
 tools: Bash, Read, Grep
 model: sonnet
 ---

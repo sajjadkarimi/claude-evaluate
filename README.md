@@ -1,6 +1,6 @@
 # claude-evaluate
 
-`/evaluate` adds a token-efficiency coach to Claude Code.
+`/efficiency-review` adds a token-efficiency coach to Claude Code.
 
 Run it at the end of a session, or on a past one. A subagent reads the session
 transcript, measures where tokens went, and writes a short review. It looks at:
@@ -21,13 +21,13 @@ and the review reports what you would pay in tokens, not dollars.
 ## What's in the box
 
 ```
-evaluate-command/.claude/
-├── commands/evaluate.md          # the /evaluate slash command
-├── agents/efficiency-coach.md    # subagent that interprets the numbers
-└── scripts/session_stats.py      # measures a session transcript (Python 3, stdlib only)
+efficiency-review-command/.claude/
+├── commands/efficiency-review.md  # the /efficiency-review slash command
+├── agents/efficiency-coach.md     # subagent that interprets the numbers
+└── scripts/session_stats.py       # measures a session transcript (Python 3, stdlib only)
 ```
 
-`evaluate-command.zip` contains the same `.claude/` folder.
+`efficiency-review-command.zip` contains the same `.claude/` folder.
 
 ## Requirements
 
@@ -44,7 +44,7 @@ Pick one. Both copy the `.claude` folder so the command, agent and script sit to
 git clone https://github.com/sajjadkarimi/claude-evaluate.git
 cd claude-evaluate
 mkdir -p ~/.claude
-cp -rn evaluate-command/.claude/* ~/.claude/
+cp -rn efficiency-review-command/.claude/* ~/.claude/
 ```
 
 `-n` avoids overwriting existing files. The agent falls back to
@@ -55,7 +55,7 @@ cp -rn evaluate-command/.claude/* ~/.claude/
 From your project root:
 
 ```bash
-cp -rn /path/to/claude-evaluate/evaluate-command/.claude/* .claude/
+cp -rn /path/to/claude-evaluate/efficiency-review-command/.claude/* .claude/
 ```
 
 (Create `.claude/` first if it doesn't exist.) Commit it if you want teammates to get
@@ -64,8 +64,8 @@ the command too.
 ### Or from the zip
 
 ```bash
-unzip evaluate-command.zip -d ~/        # user-level
-unzip evaluate-command.zip -d .         # project-level
+unzip efficiency-review-command.zip -d ~/        # user-level
+unzip efficiency-review-command.zip -d .         # project-level
 ```
 
 After installing, restart Claude Code (or start a new session) so it picks up the
@@ -75,12 +75,12 @@ command and agent. Check with `/agents`: `efficiency-coach` should be listed.
 
 | Command | What it does |
 | --- | --- |
-| `/evaluate` | Review the current (newest) session |
-| `/evaluate list` | List recent sessions, newest = 1 |
-| `/evaluate 3` | Review session number 3 from the list |
-| `/evaluate path/to/transcript.jsonl` | Review a specific transcript file |
+| `/efficiency-review` | Review the current (newest) session |
+| `/efficiency-review list` | List recent sessions, newest = 1 |
+| `/efficiency-review 3` | Review session number 3 from the list |
+| `/efficiency-review path/to/transcript.jsonl` | Review a specific transcript file |
 
-Typical flow: finish your work, run `/evaluate`, read the review, apply one or two
+Typical flow: finish your work, run `/efficiency-review`, read the review, apply one or two
 of the habits next session.
 
 ### Running the script directly
