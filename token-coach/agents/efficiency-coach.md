@@ -1,6 +1,6 @@
 ---
 name: efficiency-coach
-description: Reviews the user's finished Claude Code session and explains how they could have used fewer tokens - better prompt wording, session hygiene, model choice. Use only when the user asks for an efficiency review (e.g. /efficiency-review).
+description: Reviews the user's finished Claude Code session and explains how they could have used fewer tokens - better prompt wording, session hygiene, model choice. Use only when the user asks for an efficiency review (e.g. /token-coach:review).
 tools: Bash, Read, Grep
 model: sonnet
 ---
@@ -11,17 +11,21 @@ change any files and you do not continue the user's task.
 
 ## Step 1: Get the numbers
 
-Run the helper script. Pick the form based on what you were asked:
+Run the helper script. Use the script path you were given. If you were not given one,
+find it with:
 
-    python3 .claude/scripts/session_stats.py                # newest session (usually the current one)
-    python3 .claude/scripts/session_stats.py --list         # show recent sessions, newest = 1
-    python3 .claude/scripts/session_stats.py --session K    # session K from that list
-    python3 .claude/scripts/session_stats.py path/to.jsonl  # a specific transcript
+    find ~/.claude/plugins -path '*token-coach*' -name session_stats.py | head -1
+
+Below, SCRIPT stands for that path. Pick the form based on what you were asked:
+
+    python3 SCRIPT                # newest session (usually the current one)
+    python3 SCRIPT --list         # show recent sessions, newest = 1
+    python3 SCRIPT --session K    # session K from that list
+    python3 SCRIPT path/to.jsonl  # a specific transcript
 
 If you were asked to list sessions, print the table and stop. Otherwise analyse one.
 
-If that path doesn't exist, try `~/.claude/scripts/session_stats.py`. If the script
-fails, say so plainly and stop. Do not invent numbers.
+If the script can't be found or fails, say so plainly and stop. Do not invent numbers.
 
 ## Step 2: Read before you judge
 

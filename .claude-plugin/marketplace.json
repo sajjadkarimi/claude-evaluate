@@ -1,0 +1,20 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "token-coach",
+  "description": "A token-efficiency coach for Claude Code sessions",
+  "owner": {
+    "name": "sajjadkarimi",
+    "url": "https://github.com/sajjadkarimi"
+  },
+  "plugins": [
+    {
+      "name": "token-coach",
+      "description": "Review a Claude Code session and get habit changes, prompt rewrites and estimated savings to use fewer tokens",
+      "author": {
+        "name": "sajjadkarimi"
+      },
+      "source": "./token-coach",
+      "homepage": "https://github.com/sajjadkarimi/token-coach"
+    }
+  ]
+}

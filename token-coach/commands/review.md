@@ -3,8 +3,11 @@ description: Review a session and get tips (with estimated savings) to use fewer
 argument-hint: "[list | session number | transcript path]"
 ---
 
-Use the efficiency-coach subagent to review how I used Claude and tell me how I could
+Use the token-coach:efficiency-coach subagent to review how I used Claude and tell me how I could
 have reduced my token consumption.
+
+The measuring script is at ${CLAUDE_PLUGIN_ROOT}/scripts/session_stats.py. Tell the
+subagent this path.
 
 What to review, based on my argument: "$ARGUMENTS"
 

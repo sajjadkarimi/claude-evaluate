@@ -1,6 +1,6 @@
-# claude-evaluate
+# token-coach
 
-`/efficiency-review` adds a token-efficiency coach to Claude Code.
+`/token-coach:review` adds a token-efficiency coach to Claude Code.
 
 Run it at the end of a session, or on a past one. A subagent reads the session
 transcript, measures where tokens went, and writes a short review. It looks at:
@@ -23,10 +23,12 @@ and the review reports what you would pay in tokens, not dollars.
 ## What's in the box
 
 ```
-efficiency-review-command/.claude/
-├── commands/efficiency-review.md  # the /efficiency-review slash command
-├── agents/efficiency-coach.md     # subagent that interprets the numbers
-└── scripts/session_stats.py       # measures a session transcript (Python 3, stdlib only)
+.claude-plugin/marketplace.json        # marketplace listing
+token-coach/
+├── .claude-plugin/plugin.json         # plugin manifest
+├── commands/review.md                 # the /token-coach:review slash command
+├── agents/efficiency-coach.md         # subagent that interprets the numbers
+└── scripts/session_stats.py           # measures a session transcript (Python 3, stdlib only)
 ```
 
 ## Requirements
@@ -36,53 +38,41 @@ efficiency-review-command/.claude/
 
 ## Install
 
-Pick one. Both copy the `.claude` folder so the command, agent and script sit together.
-
-### Option A: all projects (user-level)
-
-```bash
-git clone https://github.com/sajjadkarimi/claude-evaluate.git
-cd claude-evaluate
-mkdir -p ~/.claude
-cp -rn efficiency-review-command/.claude/* ~/.claude/
+```
+/plugin marketplace add sajjadkarimi/token-coach
+/plugin install token-coach@token-coach
+/reload-plugins
 ```
 
-`-n` avoids overwriting existing files. The agent falls back to
-`~/.claude/scripts/session_stats.py` when no project-level copy exists.
+**Updating** after the repo changes:
 
-### Option B: one project only
-
-From your project root:
-
-```bash
-cp -rn /path/to/claude-evaluate/efficiency-review-command/.claude/* .claude/
 ```
-
-(Create `.claude/` first if it doesn't exist.) Commit it if you want teammates to get
-the command too.
-
-After installing, restart Claude Code (or start a new session) so it picks up the
-command and agent. Check with `/agents`: `efficiency-coach` should be listed.
+/plugin marketplace update token-coach
+/plugin update token-coach
+/reload-plugins
+```
 
 ## Usage
 
 | Command | What it does |
 | --- | --- |
-| `/efficiency-review` | Review the current (newest) session |
-| `/efficiency-review list` | List recent sessions, newest = 1 |
-| `/efficiency-review 3` | Review session number 3 from the list |
-| `/efficiency-review path/to/transcript.jsonl` | Review a specific transcript file |
+| `/token-coach:review` | Review the current (newest) session |
+| `/token-coach:review list` | List recent sessions, newest = 1 |
+| `/token-coach:review 3` | Review session number 3 from the list |
+| `/token-coach:review path/to/transcript.jsonl` | Review a specific transcript file |
 
-Typical flow: finish your work, run `/efficiency-review`, read the review, apply one or two
-of the habits next session.
+Typical flow: finish your work, run `/token-coach:review`, read the review, apply one or
+two of the habits next session.
 
 ### Running the script directly
 
+From a clone of this repo:
+
 ```bash
-python3 .claude/scripts/session_stats.py             # newest session, JSON
-python3 .claude/scripts/session_stats.py --list      # recent sessions
-python3 .claude/scripts/session_stats.py --session 2
-python3 .claude/scripts/session_stats.py path/to.jsonl
+python3 token-coach/scripts/session_stats.py             # newest session, JSON
+python3 token-coach/scripts/session_stats.py --list      # recent sessions
+python3 token-coach/scripts/session_stats.py --session 2
+python3 token-coach/scripts/session_stats.py path/to.jsonl
 ```
 
 ## Notes and limits
