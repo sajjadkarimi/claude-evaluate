@@ -75,6 +75,15 @@ python3 token-coach/scripts/session_stats.py --session 2
 python3 token-coach/scripts/session_stats.py path/to.jsonl
 ```
 
+## Tests
+
+```bash
+python3 -m unittest discover -s tests
+```
+
+The fixture in `tests/fixtures/` is a small synthetic transcript, so format changes in
+Claude Code show up as failing tests.
+
 ## Notes and limits
 
 - Transcripts are read from `~/.claude/projects`. Claude Code deletes old sessions

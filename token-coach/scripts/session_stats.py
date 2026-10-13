@@ -23,6 +23,15 @@ CORRECTION = re.compile(
     r"\b(no[, .]|nope|wrong|that'?s not|not what i|i meant|again|undo|revert|"
     r"instead|actually|try again|still (broken|failing|not))", re.I)
 
+USER_SOURCES = ("typed", "suggestion_accepted")
+FENCED = re.compile(r"```.*?(```|$)|<pasted_content.*?(</pasted_content[^>]*>|$)", re.S)
+
+
+def is_correction(text):
+    """Match correction wording in what the user typed, not in pasted logs or code."""
+    return bool(CORRECTION.search(FENCED.sub(" ", text)[:500]))
+
+
 # Relative prices, in units of one fresh input token (assumption: typical API ratios).
 W_OUT, W_WRITE, W_READ = 5.0, 1.25, 0.1
 # "Compaction" what-if: compact once context passes THRESH down to TARGET,
@@ -61,7 +70,12 @@ def is_only_tool_results(content):
 
 def real_prompt(e):
     """Return the user's typed text for a transcript entry, or None."""
-    if e.get("type") != "user" or e.get("isSidechain"):
+    if e.get("type") != "user" or e.get("isSidechain") or e.get("isMeta"):
+        return None
+    # Newer transcripts tag where a message came from; only the user's own count.
+    # Older ones have no tag, so those fall through to the text checks below.
+    src = e.get("promptSource")
+    if src is not None and src not in USER_SOURCES:
         return None
     content = (e.get("message") or {}).get("content")
     txt = text_of(content).strip()
@@ -98,7 +112,7 @@ def list_sessions(limit):
 GIT_RE = re.compile(r"(^|[;&|]\s*)git\s+(status|diff|log|show|add|commit|push|pull|fetch|"
                     r"checkout|switch|branch|stash|merge|rebase|restore|reset)\b")
 TEST_RE = re.compile(r"(^|[;&|]\s*)(pytest|python3? -m (pytest|unittest)|npm (run )?test|"
-                     r"yarn test|pnpm test|go test|cargo test|mvn\S* .*\btest|gradlew? .*\btest|"
+                     r"yarn test|pnpm test|go test|cargo test|mvn\S* .*\btest\b(?![-:])|gradlew? .*\btest\b|"
                      r"dotnet test|jest|vitest|make test|rspec|phpunit)\b")
 SMALL_EDIT_CHARS = 200
 
@@ -119,6 +133,28 @@ def wcost(u):
     return (u.get("output_tokens", 0) * W_OUT + u.get("input_tokens", 0)
             + u.get("cache_creation_input_tokens", 0) * W_WRITE
             + u.get("cache_read_input_tokens", 0) * W_READ)
+
+
+def subagent_output_tokens(path):
+    """Output tokens from <session>/subagents/*.jsonl (where newer versions store them)."""
+    seen = {}
+    for f in glob.glob(os.path.join(os.path.splitext(path)[0], "subagents", "*.jsonl")):
+        try:
+            with open(f) as fh:
+                for line in fh:
+                    try:
+                        e = json.loads(line)
+                    except ValueError:
+                        continue
+                    if e.get("type") != "assistant":
+                        continue
+                    msg = e.get("message") or {}
+                    mid = msg.get("id") or e.get("uuid")
+                    out = (msg.get("usage") or {}).get("output_tokens", 0)
+                    seen[mid] = max(out, seen.get(mid, 0))   # streamed blocks repeat usage
+        except OSError:
+            continue
+    return sum(seen.values())
 
 
 def analyse(path):
@@ -176,6 +212,7 @@ def analyse(path):
                 if p:
                     events.append(("prompt", p))
 
+    side_tokens += subagent_output_tokens(path)
     total_turns = len(asst)
     tot, models, ctx = collections.Counter(), collections.Counter(), []
     for m in asst.values():
@@ -208,7 +245,7 @@ def analyse(path):
 
     reads = collections.Counter(t for n, t, _, _ in results if n == "Read" and t)
     words = sorted(len(p["text"].split()) for p in prompts)
-    corrections = [p for p in prompts if CORRECTION.search(p["text"])]
+    corrections = [p for p in prompts if is_correction(p["text"])]
 
     # ---- savings estimates (what-ifs, in input-token-equivalents) -------------
     items = []
@@ -230,7 +267,7 @@ def analyse(path):
                           "once plus carrying it in cache for the remaining turns."})
 
     stake = sum(prompts[i - 1]["cost"] for i, p in enumerate(prompts)
-                if i > 0 and CORRECTION.search(p["text"]))
+                if i > 0 and is_correction(p["text"]))
     if stake:
         items.append({
             "tip": "Be specific up front so fewer attempts need correcting",
@@ -318,6 +355,9 @@ def analyse(path):
             "session_total_units": round(session_cost),
             "items": savings,
             "combined_pct_range": [low, round(high, 1)],
+            "combined_pct_text": ("no clear savings found" if not high
+                                  else f"about {low:g}%" if round(high, 1) == low
+                                  else f"roughly {low:g}-{round(high, 1):g}%"),
             "at_stake_not_savings": at_stake,
             "do_it_yourself": diy_block,
             "note": "Items overlap, so do not add them: the real figure likely lies between "

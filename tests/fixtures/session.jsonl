@@ -1,0 +1,12 @@
+{"type":"user","promptSource":"typed","message":{"role":"user","content":"fix it"}}
+{"type":"assistant","message":{"id":"m1","model":"x","content":[{"type":"tool_use","id":"t1","name":"Bash","input":{"command":"git status"}}],"usage":{"input_tokens":10,"output_tokens":40,"cache_read_input_tokens":1000,"cache_creation_input_tokens":0}}}
+{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"t1","content":"On branch main"}]}}
+{"type":"assistant","message":{"id":"m2","model":"x","content":[{"type":"text","text":"done"}],"usage":{"input_tokens":10,"output_tokens":20,"cache_read_input_tokens":1000,"cache_creation_input_tokens":0}}}
+{"type":"user","promptSource":"typed","message":{"role":"user","content":"no, I meant the parser"}}
+{"type":"assistant","message":{"id":"m3","model":"x","content":[{"type":"text","text":"ok"}],"usage":{"input_tokens":10,"output_tokens":20,"cache_read_input_tokens":1000,"cache_creation_input_tokens":0}}}
+{"type":"user","promptSource":"typed","message":{"role":"user","content":"here is the log\n```\nno wrong again, actually instead\n```"}}
+{"type":"assistant","message":{"id":"m4","model":"x","content":[{"type":"text","text":"ok"}],"usage":{"input_tokens":10,"output_tokens":20,"cache_read_input_tokens":1000,"cache_creation_input_tokens":0}}}
+{"type":"user","isMeta":true,"promptSource":"system","message":{"role":"user","content":"<task-notification>agent finished</task-notification>"}}
+{"type":"user","promptSource":"system","message":{"role":"user","content":"subagent hand-back text"}}
+{"type":"user","promptSource":"suggestion_accepted","message":{"role":"user","content":"run the tests"}}
+{"type":"assistant","message":{"id":"m5","model":"x","content":[{"type":"text","text":"ok"}],"usage":{"input_tokens":10,"output_tokens":20,"cache_read_input_tokens":1000,"cache_creation_input_tokens":0}}}

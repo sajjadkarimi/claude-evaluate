@@ -81,6 +81,8 @@ Rules:
   used, rather than recommending it again.
 - Say "might reduce"; you cannot measure plugin savings. Never put a percentage on them
   and keep them out of the estimated savings.
+- Remind the reader to check any plugin before installing it: read its README and
+  source, since you have not verified it.
 
 ## Step 4: Write the review
 
@@ -104,9 +106,10 @@ Keep it under about 550 words, in this shape:
 Use the `estimated_savings` block from the script, and only that. Never compute your
 own numbers.
 
-- Present `combined_pct_range` as a range of the session's weighted token cost, e.g.
-  "roughly 20-45%", never a single figure. If the range is [0, 0], say no clear savings
-  were found.
+- Present `combined_pct_text` as the headline figure, in those words (for example
+  "roughly 20-45%" or "about 30%"). A single value is an estimate, not an "up to"
+  ceiling, so do not describe it as a range. If it says no clear savings were found,
+  say that.
 - Name each item in `items` with its percentage and state its assumption in plain words.
 - Mention `at_stake_not_savings` separately: "about N% of the session went on an attempt
   you then corrected". Do NOT call that a saving.
