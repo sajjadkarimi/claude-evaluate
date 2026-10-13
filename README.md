@@ -29,8 +29,6 @@ efficiency-review-command/.claude/
 └── scripts/session_stats.py       # measures a session transcript (Python 3, stdlib only)
 ```
 
-`efficiency-review-command.zip` contains the same `.claude/` folder.
-
 ## Requirements
 
 - Claude Code
@@ -62,13 +60,6 @@ cp -rn /path/to/claude-evaluate/efficiency-review-command/.claude/* .claude/
 
 (Create `.claude/` first if it doesn't exist.) Commit it if you want teammates to get
 the command too.
-
-### Or from the zip
-
-```bash
-unzip efficiency-review-command.zip -d ~/        # user-level
-unzip efficiency-review-command.zip -d .         # project-level
-```
 
 After installing, restart Claude Code (or start a new session) so it picks up the
 command and agent. Check with `/agents`: `efficiency-coach` should be listed.
