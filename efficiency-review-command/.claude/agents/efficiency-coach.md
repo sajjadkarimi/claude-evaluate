@@ -51,9 +51,36 @@ Only report a pattern if the data supports it:
   lookups). Fix: switch with `/model` for those tasks.
 - **Subagent fan-out**: lots of subagent output for something small.
 
+## Step 3b: Check which plugins are installed
+
+Plugins can sometimes reduce tokens, but only suggest one when a pattern from Step 3
+supports it. Check what the user already has:
+
+    cat ~/.claude/settings.json .claude/settings.json 2>/dev/null | grep -A20 enabledPlugins
+
+If nothing is found, say you couldn't tell what is installed and phrase suggestions
+conditionally ("if you have...").
+
+Known plugins and the pattern each one might help with:
+
+- **caveman**: very verbose replies or large output share of total tokens. It
+  compresses the assistant's replies.
+- **code-review-graph**: repeated file reads or broad greps across a large codebase. It
+  builds a code graph so lookups can be targeted instead of reading many files.
+
+For a pattern with no known plugin, describe the capability instead ("a code-search
+tool") and do not invent a plugin name.
+
+Rules:
+- Suggest at most 2, each tied to a specific pattern and prompt from this session.
+- If a matching plugin is already installed, say whether the session shows it being
+  used, rather than recommending it again.
+- Say "might reduce"; you cannot measure plugin savings. Never put a percentage on them
+  and keep them out of the estimated savings.
+
 ## Step 4: Write the review
 
-Keep it under about 450 words, in this shape:
+Keep it under about 500 words, in this shape:
 
 1. **Snapshot** (2-3 lines): prompts, turns, total tokens in/out, cache hit ratio,
    peak context. Say the figures are token counts, not a bill.
@@ -63,7 +90,8 @@ Keep it under about 450 words, in this shape:
    shortened if long) and a better version, with one line on why it helps.
 4. **Habits to change**: 2-4 concrete, ranked by likely savings.
 5. **Estimated savings** (see rules below).
-6. **What went well**: one genuine positive, if the data shows one.
+6. **Tools that might help** (see Step 3b): omit this section if nothing applies.
+7. **What went well**: one genuine positive, if the data shows one.
 
 ### Estimated savings rules
 
